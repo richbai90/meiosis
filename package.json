@@ -1,0 +1,32 @@
+{
+  "name": "meiosis",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types" : "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "test": "mocha -r ts-node/register tests/**/*.test.ts",
+    "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chai": "^4.2.3",
+    "@types/chai-spies": "^1.0.1",
+    "@types/mocha": "^5.2.7",
+    "chai": "^4.2.0",
+    "chai-spies": "^1.0.0",
+    "mocha": "^6.2.1",
+    "nyc": "^14.1.1",
+    "rollup": "^1.23.1",
+    "rollup-plugin-typescript2": "^0.24.3",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.3"
+  },
+  "dependencies": {
+    "immutable": "^4.0.0-rc.12",
+    "rxjs": "^6.5.3"
+  }
+}
