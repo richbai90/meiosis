@@ -16,7 +16,15 @@ export interface ActionsSignature {
   [p: string]: (...p: any) => void;
 }
 
-export interface ModelOf<T, A extends ActionsSignature> {
+export interface ServicesSignature {
+  [p: string]: () => (...p: any) => void;
+}
+
+export interface ModelOf<
+  T,
+  A extends ActionsSignature,
+  S extends ServicesSignature = {}
+> {
   initial: T;
   actions: (
     update$: Subject<
@@ -26,5 +34,12 @@ export interface ModelOf<T, A extends ActionsSignature> {
       ) => Record<T> & Readonly<T>
     >["next"]
   ) => A;
+  services: (
+    update$: Subject<
+      (
+        state: Record<T> & Readonly<T>,
+        history: (s: Record<T> & Readonly<T>) => void
+      ) => Record<T> & Readonly<T>
+    >["next"]
+  ) => S;
 }
-

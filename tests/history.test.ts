@@ -1,4 +1,4 @@
-import createStore from "..";
+import createStore from "../src";
 import TodoModel from "./models/todo";
 import { expect } from "chai";
 import { skip, take } from "rxjs/operators";

@@ -1,4 +1,4 @@
-import createStore from "..";
+import createStore from "../src";
 import TodoModel from "./models/todo";
 import chai, { expect, use } from "chai";
 import { Observable } from "rxjs";
@@ -7,10 +7,10 @@ import { map, distinctUntilChanged } from "rxjs/operators";
 
 use(spies);
 
-const { actions, state } = createStore(TodoModel);
+const { actions, services, state } = createStore(TodoModel);
 
 describe("create a store", () => {
-  it("should return an object with actions and state", () => {
+  it("should return an object with actions, services, and state", () => {
     expect(state).instanceOf(Observable);
     expect(Object.keys(actions)).eql([
       "addTodo",
@@ -18,6 +18,9 @@ describe("create a store", () => {
       "$undo",
       "$redo"
     ]);
+    expect(Object.keys(services)).eql([
+      'progress',
+    ])
   });
   it("should only respond to and call actions once", () => {
     const subscripition = chai.spy();
