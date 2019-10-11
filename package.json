@@ -7,6 +7,11 @@
   "files": [
     "dist/*"
   ],
+  "homepage": "https://github.com/richbai90/rxjs-meiosis",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/richbai90/rxjs-meiosis.git"
+  },
   "scripts": {
     "test": "mocha -r ts-node/register --timeout 30000 tests/**/*.test.ts",
     "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test"
