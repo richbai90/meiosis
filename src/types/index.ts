@@ -15,7 +15,7 @@ export type UnionToIntersection<T> = (T extends any
   type Parameters<T> = T extends (... args: infer T) => any ? T : never; 
   
   export type Services<T extends ServicesSignature> = {
-    [P in keyof T] : ReturnType<ReturnType<T[P]>> extends void ? () => ReturnType<ReturnType<T[P]>> : () => (...args : Parameters<ReturnType<T[P]>>) => Observable<ReturnType<ReturnType<T[P]>>>
+    [P in keyof T] : ReturnType<ReturnType<T[P]>> extends void ? T[P] : () => (...args : Parameters<ReturnType<T[P]>>) => Observable<ReturnType<ReturnType<T[P]>>>
   }
 
 export interface ActionsSignature {
