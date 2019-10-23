@@ -37,9 +37,7 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
       initial: {} as UnionToIntersection<T[number]["initial"]>,
       actions: {} as UnionToIntersection<ReturnType<T[number]["actions"]>>,
       services: {} as {
-        [p in keyof UnionToIntersection<ReturnType<T[number]["services"]>>]: (
-          ...P: any
-        ) => void
+        [P in keyof UnionToIntersection<ReturnType<T[number]["services"]>>]: UnionToIntersection<ReturnType<T[number]["services"]>>[P]
       }
     }
   );

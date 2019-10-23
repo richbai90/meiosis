@@ -20,6 +20,7 @@ describe("create a store", () => {
     ]);
     expect(Object.keys(services)).eql([
       'progress',
+      'test',
     ])
   });
   it("should only respond to and call actions once", () => {

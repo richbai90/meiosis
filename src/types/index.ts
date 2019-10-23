@@ -1,5 +1,5 @@
 import { Record } from "immutable";
-import { Subject } from "rxjs";
+import { Subject, Observable } from "rxjs";
 
 export type Updater<T> = (
   state: Record<T> & Readonly<T>,
@@ -12,12 +12,18 @@ export type UnionToIntersection<T> = (T extends any
   ? I
   : never;
 
+  type Parameters<T> = T extends (... args: infer T) => any ? T : never; 
+  
+  export type Services<T extends ServicesSignature> = {
+    [P in keyof T] : ReturnType<ReturnType<T[P]>> extends void ? () => ReturnType<ReturnType<T[P]>> : () => (...args : Parameters<ReturnType<T[P]>>) => Observable<ReturnType<ReturnType<T[P]>>>
+  }
+
 export interface ActionsSignature {
   [p: string]: (...p: any) => void;
 }
 
 export interface ServicesSignature {
-  [p: string]: () => (...p: any) => void;
+  [p: string]: () => (...p: any) => any;
 }
 
 export interface ModelOf<
@@ -41,5 +47,5 @@ export interface ModelOf<
         history: (s: Record<T> & Readonly<T>) => void
       ) => Record<T> & Readonly<T>
     >["next"]
-  ) => S;
+  ) => Services<S>;
 }
