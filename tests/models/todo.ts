@@ -1,11 +1,11 @@
 import { List, Record } from "immutable";
 import { ActionsSignature, ModelOf, ServicesSignature } from "../../src/types";
-import { timer, Subscription, from } from "rxjs";
+import { timer, Subscription, from, Observable } from "rxjs";
 import { takeWhile, finalize } from "rxjs/operators";
 
 export interface TodoServices extends ServicesSignature {
-  progress: () => () => void;
-  test: () => (values: string[]) => string;
+  progress: () => void;
+  test: (values: string[]) => Observable<string>;
 }
 
 export interface TodoActions extends ActionsSignature {
@@ -18,6 +18,7 @@ export interface TodoShape {
   todo: Record<{ title: string; status: string }>;
   progress: number;
 }
+
 export default {
   initial: {
     todo: Record({
@@ -59,7 +60,7 @@ export default {
           }
         };
       },
-      test: () => (values) => from(values), 
+      test: () => (values : string[]) => from(values), 
     };
   }
 } as ModelOf<TodoShape, TodoActions, TodoServices>;
