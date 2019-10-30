@@ -17,7 +17,7 @@ export interface ActionsSignature {
 }
 
 export interface ServicesSignature {
-  [p: string]: (...p: any) => void | Observable<any>;
+  [p: string]: (...p: any) => any;
 }
 
 export interface ModelOf<

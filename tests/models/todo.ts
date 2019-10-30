@@ -18,7 +18,6 @@ export interface TodoShape {
   todo: Record<{ title: string; status: string }>;
   progress: number;
 }
-
 export default {
   initial: {
     todo: Record({
