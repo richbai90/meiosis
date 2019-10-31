@@ -21,7 +21,7 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
           ...store.services,
           ...(model.services
             ? (() => {
-                const services = model.services(update);
+                const services = model.services({ ...model.actions(update) });
                 return Object.keys(services).reduce(
                   (final, current) => {
                     final[current] = services[current]();
@@ -37,7 +37,15 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
       initial: {} as UnionToIntersection<T[number]["initial"]>,
       actions: {} as UnionToIntersection<ReturnType<T[number]["actions"]>>,
       services: {} as {
-        [p in keyof UnionToIntersection<ReturnType<T[number]["services"]>>]: UnionToIntersection<ReturnType<T[number]["services"]>>[p] extends () => (...args : any) => any ? ReturnType<UnionToIntersection<ReturnType<T[number]["services"]>>[p]> : never
+        [p in keyof UnionToIntersection<
+          ReturnType<T[number]["services"]>
+        >]: UnionToIntersection<
+          ReturnType<T[number]["services"]>
+        >[p] extends () => (...args: any) => any
+          ? ReturnType<
+              UnionToIntersection<ReturnType<T[number]["services"]>>[p]
+            >
+          : never;
       }
     }
   );

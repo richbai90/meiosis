@@ -35,11 +35,6 @@ export interface ModelOf<
     >["next"]
   ) => A;
   services: (
-    update$: Subject<
-      (
-        state: Record<T> & Readonly<T>,
-        history: (s: Record<T> & Readonly<T>) => void
-      ) => Record<T> & Readonly<T>
-    >["next"]
+    actions: A
   ) => {[P in keyof S] : () => S[P]};
 }

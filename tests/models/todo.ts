@@ -43,7 +43,7 @@ export default {
       }
     };
   },
-  services(update) {
+  services(actions) {
     return {
       progress: () => {
         let subscription : null | Subscription = null;
@@ -54,7 +54,7 @@ export default {
         return () => {
           if (subscription === null) {
             subscription = source.subscribe(v =>
-              update(state => state.set("progress", v))
+              actions.addTodo("test", "test")
             );
           }
         };
