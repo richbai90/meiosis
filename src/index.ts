@@ -1,62 +1,87 @@
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Subject, merge } from "rxjs";
 import { Record } from "immutable";
-import { scan, share } from "rxjs/operators";
-import { UnionToIntersection, ModelOf, Updater } from "./types/index";
+import { scan, share, switchMap, tap } from "rxjs/operators";
+import { UnionToIntersection, ModelOf, Updater, Defined } from "./types/index";
 import History from "./history";
 
+type CreateActions<T extends ModelOf<any, any, any>["actions"]> = {
+  [P in keyof ReturnType<T>]: ReturnType<T>[P]["patch"];
+};
+
+const createActions = <
+  T extends ModelOf<any, any, any>["actions"],
+  N extends Subject<any>["next"]
+>(
+  actions: T,
+  next: N,
+  effect: Subject<symbol>["next"]
+) => {
+  const a = actions(next);
+  return Object.keys(a).reduce(
+    (pv, cv) => {
+      pv[cv] = (...p: any[]) => {
+        a[cv].patch(...p);
+        effect(a[cv].type);
+      };
+      return pv;
+    },
+    {} as { [P in keyof typeof a]: (typeof a)[P]["patch"] }
+  );
+};
+
 const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
+  const effect$ = new Subject<symbol>();
   const update$ = new BehaviorSubject<
     Updater<UnionToIntersection<T[number]["initial"]>>
   >(state => state);
-  const update = update$.next.bind(update$);
+  const next = update$.next.bind(update$);
   const store = models.reduce(
-    (store, model) =>
-      Object.assign(store, {
+    (store, model) => {
+      return Object.assign(store, {
         initial: { ...store.initial, ...model.initial },
         actions: {
           ...store.actions,
-          ...model.actions(update)
+          ...createActions(model.actions, next, effect$.next)
         },
         services: {
           ...store.services,
-          ...(model.services
-            ? (() => {
-                const services = model.services({ ...model.actions(update) });
-                return Object.keys(services).reduce(
-                  (final, current) => {
-                    final[current] = services[current]();
-                    return final;
-                  },
-                  {} as any
-                );
-              })()
-            : {})
+          ...((model.services &&
+            model.services({ ...model.actions(next) }, next)) ||
+            {})
+        },
+        effects: {
+          ...store.effects,
+          ...((model.effects && model.effects(effect$.asObservable())) || {})
         }
-      }),
+      });
+    },
     {
       initial: {} as UnionToIntersection<T[number]["initial"]>,
-      actions: {} as UnionToIntersection<ReturnType<T[number]["actions"]>>,
-      services: {} as {
-        [p in keyof UnionToIntersection<
-          ReturnType<T[number]["services"]>
-        >]: UnionToIntersection<
-          ReturnType<T[number]["services"]>
-        >[p] extends () => (...args: any) => any
-          ? ReturnType<
-              UnionToIntersection<ReturnType<T[number]["services"]>>[p]
-            >
-          : never;
-      }
+      actions: {} as CreateActions<T[number]["actions"]>,
+      services: {} as UnionToIntersection<
+        ReturnType<Defined<() => {}, T[number]["services"]>>
+      >,
+      effects: {} as UnionToIntersection<
+        ReturnType<Defined<() => {}, T[number]["effects"]>>
+      >
     }
   );
-  return { ...store, update$ };
+  return { ...store, update$, effect$ };
 };
 
 export default function createStoreFromModels<
   T extends ModelOf<any, any, any>[]
 >(...models: T) {
   const history = new History<any>();
-  const { actions, initial, services, update$ } = combineModels(...models);
+  const {
+    actions,
+    initial,
+    services,
+    effects,
+    update$,
+    effect$
+  } = combineModels(...models);
+
   const state = update$.asObservable().pipe(
     scan((state, updater) => {
       return updater(state, s => {
@@ -65,6 +90,21 @@ export default function createStoreFromModels<
     }, Record(initial)()),
     share()
   );
+
+  // effect$
+  //   .pipe(
+  //     switchMap(e =>
+  //       state.pipe(
+  //         tap(s => {
+  //           (Object.values(effects as any) as any[]).forEach(effect => {
+  //             effect(s, actions, services);
+  //           });
+  //         })
+  //       )
+  //     )
+  //   )
+  //   .subscribe();
+
   return {
     actions: {
       ...actions,

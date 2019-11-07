@@ -1,6 +1,8 @@
 import { Record } from "immutable";
 import { Subject, Observable } from "rxjs";
 
+export type Defined<D, T> = T extends undefined ? D & T : T;
+
 export type Updater<T> = (
   state: Record<T> & Readonly<T>,
   history: (s: typeof state) => void
@@ -17,7 +19,7 @@ export interface ActionsSignature {
 }
 
 export interface ServicesSignature {
-  [p: string]: (...p: any) => any;
+  [p: string]: (...p: any) => void | Updater<any>;
 }
 
 export interface ModelOf<
@@ -27,14 +29,27 @@ export interface ModelOf<
 > {
   initial: T;
   actions: (
-    update$: Subject<
-      (
-        state: Record<T> & Readonly<T>,
-        history: (s: Record<T> & Readonly<T>) => void
-      ) => Record<T> & Readonly<T>
-    >["next"]
-  ) => A;
-  services: (
-    actions: A
-  ) => {[P in keyof S] : () => S[P]};
+    update$: Subject<Updater<T>>["next"]
+  ) => { [P in keyof A]: { type: symbol; patch: A[P] } };
+  services?: (
+    actions: A,
+    update$: Subject<Updater<T>>["next"]
+  ) => {
+    [P in keyof S]: ReturnType<S[P]> extends Updater<any>
+      ? (...P: Parameters<S[P]>) => Updater<T>
+      : S[P];
+  };
+  effects?: (
+    effect$: Observable<symbol>
+  ) => {
+    [p: string]: (
+      state: T,
+      actions: A,
+      services: {
+        [P in keyof S]: ReturnType<S[P]> extends Updater<any>
+          ? (...P: Parameters<S[P]>) => Updater<T>
+          : S[P];
+      }
+    ) => void;
+  };
 }

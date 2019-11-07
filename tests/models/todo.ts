@@ -5,7 +5,7 @@ import { takeWhile, finalize } from "rxjs/operators";
 
 export interface TodoServices extends ServicesSignature {
   progress: () => void;
-  test: (values: string[]) => Observable<string>;
+  test: (values: string[]) => void;
 }
 
 export interface TodoActions extends ActionsSignature {
@@ -29,37 +29,30 @@ export default {
   },
   actions(update) {
     return {
-      addTodo: (title, status = "PENDING") => {
-        update((state, history) => {
-          const todo = Record({ title, status })();
-          history(state);
-          return state.set("todos", state.get("todos").push(todo));
-        });
+      addTodo: {
+        patch(title, status = "PENDING") {
+          update((state, history) => {
+            const todo = Record({ title, status })();
+            history(state);
+            return state.set("todos", state.get("todos").push(todo));
+          });
+        },
+        type: Symbol("AddTodo")
       },
-      typeNewTodoTitle: (title, status = "PENDING") => {
-        update(state => {
-          return state.set("todo", Record({ title, status })());
-        });
+      typeNewTodoTitle: {
+        patch(title, status = "PENDING") {
+          update(state => {
+            return state.set("todo", Record({ title, status })());
+          });
+        },
+        type: Symbol("typeNewTodoTitle")
       }
     };
   },
-  services(actions) {
+  services(actions, update) {
     return {
-      progress: () => {
-        let subscription : null | Subscription = null;
-        const source = timer(0, 1000).pipe(
-          takeWhile(val => val <= 10),
-          finalize(() => (subscription = null))
-        );
-        return () => {
-          if (subscription === null) {
-            subscription = source.subscribe(v =>
-              actions.addTodo("test", "test")
-            );
-          }
-        };
-      },
-      test: () => (values : string[]) => from(values), 
+      progress: () => {},
+      test: (values: string[]) => {}
     };
   }
 } as ModelOf<TodoShape, TodoActions, TodoServices>;
