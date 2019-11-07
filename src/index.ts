@@ -1,8 +1,18 @@
 import { BehaviorSubject, Subject, merge } from "rxjs";
 import { Record } from "immutable";
-import { scan, share, switchMap, tap } from "rxjs/operators";
+import {
+  scan,
+  share,
+  switchMap,
+  tap,
+  mergeMap,
+  mergeMapTo,
+  switchMapTo
+} from "rxjs/operators";
 import { UnionToIntersection, ModelOf, Updater, Defined } from "./types/index";
 import History from "./history";
+
+type ValueOf<T> = T[keyof T];
 
 type CreateActions<T extends ModelOf<any, any, any>["actions"]> = {
   [P in keyof ReturnType<T>]: ReturnType<T>[P]["patch"];
@@ -30,18 +40,19 @@ const createActions = <
 };
 
 const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
-  const effect$ = new Subject<symbol>();
+  const action$ = new Subject<symbol>();
   const update$ = new BehaviorSubject<
     Updater<UnionToIntersection<T[number]["initial"]>>
   >(state => state);
   const next = update$.next.bind(update$);
+  const action = action$.next.bind(action$);
   const store = models.reduce(
     (store, model) => {
       return Object.assign(store, {
         initial: { ...store.initial, ...model.initial },
         actions: {
           ...store.actions,
-          ...createActions(model.actions, next, effect$.next)
+          ...createActions(model.actions, next, action)
         },
         services: {
           ...store.services,
@@ -51,7 +62,7 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
         },
         effects: {
           ...store.effects,
-          ...((model.effects && model.effects(effect$.asObservable())) || {})
+          ...(model.effects  || {})
         }
       });
     },
@@ -62,11 +73,11 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
         ReturnType<Defined<() => {}, T[number]["services"]>>
       >,
       effects: {} as UnionToIntersection<
-        ReturnType<Defined<() => {}, T[number]["effects"]>>
+        Defined<{}, T[number]["effects"]>
       >
     }
   );
-  return { ...store, update$, effect$ };
+  return { ...store, update$, action$: action$ };
 };
 
 export default function createStoreFromModels<
@@ -79,7 +90,7 @@ export default function createStoreFromModels<
     services,
     effects,
     update$,
-    effect$
+    action$
   } = combineModels(...models);
 
   const state = update$.asObservable().pipe(
@@ -91,19 +102,20 @@ export default function createStoreFromModels<
     share()
   );
 
-  // effect$
-  //   .pipe(
-  //     switchMap(e =>
-  //       state.pipe(
-  //         tap(s => {
-  //           (Object.values(effects as any) as any[]).forEach(effect => {
-  //             effect(s, actions, services);
-  //           });
-  //         })
-  //       )
-  //     )
-  //   )
-  //   .subscribe();
+  action$
+    .asObservable()
+    .pipe(
+      switchMap(actionType =>
+        state.pipe(
+          tap(currentState =>
+            (Object.values(effects as any) as any[]).forEach(effect =>
+              effect(actionType, currentState, actions, services)
+            )
+          )
+        )
+      )
+    )
+    .subscribe();
 
   return {
     actions: {

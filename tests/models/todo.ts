@@ -54,5 +54,15 @@ export default {
       progress: () => {},
       test: (values: string[]) => {}
     };
+  },
+  effects: {
+    log: (type, state, actions, services) => {
+      console.log({
+        type,
+        state,
+        actions,
+        services
+      })
+    }
   }
 } as ModelOf<TodoShape, TodoActions, TodoServices>;

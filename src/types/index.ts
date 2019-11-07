@@ -39,10 +39,9 @@ export interface ModelOf<
       ? (...P: Parameters<S[P]>) => Updater<T>
       : S[P];
   };
-  effects?: (
-    effect$: Observable<symbol>
-  ) => {
+  effects?: {
     [p: string]: (
+      actionType: symbol,
       state: T,
       actions: A,
       services: {
