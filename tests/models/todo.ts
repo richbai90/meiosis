@@ -50,7 +50,7 @@ export default {
       }
     };
   },
-  services(actions, update) {
+  services(actions) {
     return {
       progress: () => {
         let subscription: null | Subscription = null;

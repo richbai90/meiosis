@@ -59,8 +59,7 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
           ...store.services,
           ...((model.services &&
             model.services(
-              { ...createActions(model.actions, next, action) },
-              next
+              { ...createActions(model.actions, next, action) }
             )) ||
             {})
         },

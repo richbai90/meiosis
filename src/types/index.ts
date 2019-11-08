@@ -19,7 +19,7 @@ export interface ActionsSignature {
 }
 
 export interface ServicesSignature {
-  [p: string]: (...p: any) => void | Updater<any>;
+  [p: string]: (...p: any) => void;
 }
 
 export interface ModelOf<
@@ -32,8 +32,7 @@ export interface ModelOf<
     update$: Subject<Updater<T>>["next"]
   ) => { [P in keyof A]: { type: symbol; patch: A[P] } };
   services?: (
-    actions: A,
-    update$: Subject<Updater<T>>["next"]
+    actions: A
   ) => {
     [P in keyof S]: ReturnType<S[P]> extends Updater<any>
       ? (...P: Parameters<S[P]>) => Updater<T>
@@ -51,4 +50,8 @@ export interface ModelOf<
       }
     ) => void;
   };
+}
+
+export type Filtered<T,K> = {
+  [P in keyof T] : P extends K ? T[P] : never
 }
