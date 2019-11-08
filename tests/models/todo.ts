@@ -3,9 +3,10 @@ import { ActionsSignature, ModelOf, ServicesSignature } from "../../src/types";
 import { timer, Subscription, from, Observable } from "rxjs";
 import { takeWhile, finalize } from "rxjs/operators";
 
+const AddTodo = Symbol("AddTodo");
+
 export interface TodoServices extends ServicesSignature {
   progress: () => void;
-  test: (values: string[]) => void;
 }
 
 export interface TodoActions extends ActionsSignature {
@@ -37,7 +38,7 @@ export default {
             return state.set("todos", state.get("todos").push(todo));
           });
         },
-        type: Symbol("AddTodo")
+        type: AddTodo
       },
       typeNewTodoTitle: {
         patch(title, status = "PENDING") {
@@ -51,18 +52,14 @@ export default {
   },
   services(actions, update) {
     return {
-      progress: () => {},
-      test: (values: string[]) => {}
+      progress: () => {
+        let subscription: null | Subscription = null;
+        const source = timer(0, 1000).pipe(
+          takeWhile(val => val <= 10),
+          finalize(() => (subscription = null))
+        );
+          subscription = source.subscribe(v => actions.addTodo("test", "test"));
+      }
     };
-  },
-  effects: {
-    log: (type, state, actions, services) => {
-      console.log({
-        type,
-        state,
-        actions,
-        services
-      })
-    }
   }
 } as ModelOf<TodoShape, TodoActions, TodoServices>;

@@ -28,10 +28,12 @@ describe("Test the history functions of meiosis", () => {
         take(1)
       )
       .subscribe(s => {
+        console.log(s.toJS())
         prevState = s;
       });
 
     state.pipe(skip(2)).subscribe(s => {
+      console.log(s.toJS())
       expect(s).to.equal(prevState);
     });
 
@@ -40,15 +42,17 @@ describe("Test the history functions of meiosis", () => {
     actions.$redo();
   });
 
-  it("should not undo if no prevState exists", () => {
+  it("should not undo or redo if no prevState exists", () => {
     let prevState: any;
     const { actions, state, history } = createStore(TodoModel);
 
     state.pipe(take(1)).subscribe(s => {
+      console.log(s.toJS());
       prevState = s;
     });
 
     state.pipe(skip(1)).subscribe(s => {
+        console.log(s.toJS())
         expect(s.toJS()).to.eql(prevState.toJS());
     })
 

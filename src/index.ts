@@ -7,7 +7,8 @@ import {
   tap,
   mergeMap,
   mergeMapTo,
-  switchMapTo
+  switchMapTo,
+  filter
 } from "rxjs/operators";
 import { UnionToIntersection, ModelOf, Updater, Defined } from "./types/index";
 import History from "./history";
@@ -30,8 +31,8 @@ const createActions = <
   return Object.keys(a).reduce(
     (pv, cv) => {
       pv[cv] = (...p: any[]) => {
-        a[cv].patch(...p);
         effect(a[cv].type);
+        a[cv].patch(...p);
       };
       return pv;
     },
@@ -57,12 +58,15 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
         services: {
           ...store.services,
           ...((model.services &&
-            model.services({ ...model.actions(next) }, next)) ||
+            model.services(
+              { ...createActions(model.actions, next, action) },
+              next
+            )) ||
             {})
         },
         effects: {
           ...store.effects,
-          ...(model.effects  || {})
+          ...(model.effects || {})
         }
       });
     },
@@ -72,9 +76,7 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
       services: {} as UnionToIntersection<
         ReturnType<Defined<() => {}, T[number]["services"]>>
       >,
-      effects: {} as UnionToIntersection<
-        Defined<{}, T[number]["effects"]>
-      >
+      effects: {} as UnionToIntersection<Defined<{}, T[number]["effects"]>>
     }
   );
   return { ...store, update$, action$: action$ };
@@ -102,18 +104,24 @@ export default function createStoreFromModels<
     share()
   );
 
+  let prevAction = Symbol();
+
   action$
     .asObservable()
     .pipe(
-      switchMap(actionType =>
-        state.pipe(
-          tap(currentState =>
-            (Object.values(effects as any) as any[]).forEach(effect =>
-              effect(actionType, currentState, actions, services)
-            )
-          )
-        )
-      )
+      switchMap(actionType => {
+        return state.pipe(
+          filter(() => prevAction !== actionType),
+          tap(currentState => {
+            // necessary since state is a behaviorSubject it will always fire twice on the first action
+            prevAction = actionType;
+            (Object.values(effects as any) as any[]).forEach(effect => {
+              effect(actionType, currentState, actions, services);
+            });
+          })
+        );
+      }),
+      switchMapTo(action$)
     )
     .subscribe();
 

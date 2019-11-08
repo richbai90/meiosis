@@ -3,6 +3,7 @@ import TodoModel from "./models/todo";
 import chai, { expect, use } from "chai";
 import { skip, take } from "rxjs/operators";
 import spies from "chai-spies";
+import { ModelOf } from "../src/types";
 
 use(spies);
 
@@ -18,11 +19,11 @@ describe("test that the state updates correctly", () => {
       expect(s.get("todo").get("title")).to.eq("test");
     });
 
-    actions.addTodo("testing");
-    actions.typeNewTodoTitle("test");
+    actions.addTodo("testing", "started");
+    actions.typeNewTodoTitle("test", "pending");
   });
 
-  it("should always recieve the latest state", async () => {
+  it("should always recieve the latest state", () => {
     let prevState: any;
     const { actions, state } = createStore(TodoModel);
     state
@@ -34,23 +35,40 @@ describe("test that the state updates correctly", () => {
         prevState = s;
       });
 
-    actions.typeNewTodoTitle("test");
-    await sleep(500);
+      state.subscribe(s => {
+        expect(s.get("todo").get("title")).to.equal(
+          prevState.get("todo").get("title")
+        );
+      });
+      
+      actions.typeNewTodoTitle("test");
 
-    state.subscribe(s => {
-      expect(s.get("todo").get("title")).to.equal(
-        prevState.get("todo").get("title")
-      );
-    });
   });
 
-  it("Should only expose the inner function of service thunks", async () => {
+  it("Should be able to use services", async () => {
     const { services, state } = createStore(TodoModel);
     const sub = chai.spy();
     state.pipe(skip(1)).subscribe(sub);
     services.progress();
     await sleep(15000);
     expect(sub).to.have.been.called.exactly(11);
+  });
+
+  it("Should not expect services to be mandatory", () => {
+    const NewModel : any = {...TodoModel};
+    delete NewModel.services;
+    const { state, services } = createStore(NewModel)
+    expect(state).to.exist
+    expect(services).to.be.empty
   })
 
+  it("should perform side effects", async () => {
+    const effect = chai.spy();
+    TodoModel.effects = {};
+    TodoModel.effects.log = effect
+    const { actions, state } = createStore(TodoModel);
+    //state.subscribe();
+    actions.addTodo("meiosis");
+    expect(effect).to.have.been.called.once
+  });
 });

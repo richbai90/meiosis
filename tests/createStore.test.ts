@@ -26,7 +26,6 @@ describe("create a store", () => {
     state
       .pipe(
         map(s => s.get("todo")),
-        tap(s => console.log({todos: s})),
         distinctUntilChanged()
       )
       .subscribe(subscripition);
@@ -40,7 +39,7 @@ describe("create a store", () => {
 
     actions.addTodo("test");
 
-    expect(subscripition).to.have.been.called.twice;
+    expect(subscripition).to.have.been.called.exactly(2);
 
     actions.typeNewTodoTitle("test");
 
