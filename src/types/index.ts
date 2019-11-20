@@ -32,6 +32,7 @@ export interface ModelOf<
     update$: Subject<Updater<T>>["next"]
   ) => { [P in keyof A]: { type: symbol; patch: A[P] } };
   services?: (
+    state: T,
     actions: A
   ) => {
     [P in keyof S]: ReturnType<S[P]> extends Updater<any>

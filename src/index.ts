@@ -8,7 +8,8 @@ import {
   mergeMap,
   mergeMapTo,
   switchMapTo,
-  filter
+  filter,
+  concatMap
 } from "rxjs/operators";
 import { UnionToIntersection, ModelOf, Updater, Defined } from "./types/index";
 import History from "./history";
@@ -59,6 +60,7 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
           ...store.services,
           ...((model.services &&
             model.services(
+              model.initial,
               { ...createActions(model.actions, next, action) }
             )) ||
             {})
@@ -108,7 +110,7 @@ export default function createStoreFromModels<
   action$
     .asObservable()
     .pipe(
-      switchMap(actionType => {
+      concatMap(actionType => {
         return state.pipe(
           filter(() => prevAction !== actionType),
           tap(currentState => {
