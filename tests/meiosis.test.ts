@@ -69,6 +69,7 @@ describe("test that the state updates correctly", () => {
     const { actions, state } = createStore(TodoModel);
     //state.subscribe();
     actions.addTodo("meiosis");
-    expect(effect).to.have.been.called.once
+    actions.addTodo("meitosis")
+    expect(effect).to.have.been.called.twice
   });
 });

@@ -59,10 +59,9 @@ const combineModels = <T extends ModelOf<any, any, any>[]>(...models: T) => {
         services: {
           ...store.services,
           ...((model.services &&
-            model.services(
-              model.initial,
-              { ...createActions(model.actions, next, action) }
-            )) ||
+            model.services(model.initial, {
+              ...createActions(model.actions, next, action)
+            })) ||
             {})
         },
         effects: {
@@ -96,33 +95,25 @@ export default function createStoreFromModels<
     action$
   } = combineModels(...models);
 
+  const currentState = new BehaviorSubject(Record(initial)());
   const state = update$.asObservable().pipe(
     scan((state, updater) => {
       return updater(state, s => {
         history.addHistory(s);
       });
     }, Record(initial)()),
+    tap(s => currentState.next(s)),
     share()
   );
-
-  let prevAction = Symbol();
 
   action$
     .asObservable()
     .pipe(
-      concatMap(actionType => {
-        return state.pipe(
-          filter(() => prevAction !== actionType),
-          tap(currentState => {
-            // necessary since state is a behaviorSubject it will always fire twice on the first action
-            prevAction = actionType;
-            (Object.values(effects as any) as any[]).forEach(effect => {
-              effect(actionType, currentState, actions, services);
-            });
-          })
-        );
-      }),
-      switchMapTo(action$)
+      tap(actionType => {
+        (Object.values(effects as any) as any[]).forEach(effect => {
+          effect(actionType, currentState.getValue(), actions, services);
+        });
+      })
     )
     .subscribe();
 
