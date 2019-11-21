@@ -28,13 +28,11 @@ describe("Test the history functions of meiosis", () => {
         take(1)
       )
       .subscribe(s => {
-        console.log(s.toJS())
         prevState = s;
       });
 
-    state.pipe(skip(2)).subscribe(s => {
-      console.log(s.toJS())
-      expect(s).to.equal(prevState);
+    state.pipe(skip(3)).subscribe(s => {
+      expect(s.toJS()).to.eql(prevState.toJS());
     });
 
     actions.addTodo("todo");

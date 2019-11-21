@@ -34,6 +34,8 @@ describe("test that the state updates correctly", () => {
       .subscribe(s => {
         prevState = s;
       });
+      
+      actions.typeNewTodoTitle("test");
 
       state.subscribe(s => {
         expect(s.get("todo").get("title")).to.equal(
@@ -41,7 +43,6 @@ describe("test that the state updates correctly", () => {
         );
       });
       
-      actions.typeNewTodoTitle("test");
 
   });
 
@@ -63,7 +64,10 @@ describe("test that the state updates correctly", () => {
   })
 
   it("should perform side effects", async () => {
-    const effect = chai.spy();
+    let states : any[] = [];
+    const effect = chai.spy((type : any, state : any) => {
+      states.push({type,state})
+    });
     TodoModel.effects = {};
     TodoModel.effects.log = effect
     const { actions, state } = createStore(TodoModel);
@@ -71,5 +75,6 @@ describe("test that the state updates correctly", () => {
     actions.addTodo("meiosis");
     actions.addTodo("meitosis")
     expect(effect).to.have.been.called.twice
+    console.log(states.flatMap(s => s.state.toJS().todos))
   });
 });

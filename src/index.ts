@@ -2,14 +2,9 @@ import { BehaviorSubject, Subject, merge } from "rxjs";
 import { Record } from "immutable";
 import {
   scan,
-  share,
   switchMap,
   tap,
-  mergeMap,
-  mergeMapTo,
-  switchMapTo,
   filter,
-  concatMap
 } from "rxjs/operators";
 import { UnionToIntersection, ModelOf, Updater, Defined } from "./types/index";
 import History from "./history";
@@ -95,25 +90,26 @@ export default function createStoreFromModels<
     action$
   } = combineModels(...models);
 
-  const currentState = new BehaviorSubject(Record(initial)());
   const state = update$.asObservable().pipe(
     scan((state, updater) => {
       return updater(state, s => {
         history.addHistory(s);
       });
-    }, Record(initial)()),
-    tap(s => currentState.next(s)),
-    share()
+    }, Record(initial)())
   );
 
-  action$
-    .asObservable()
+  state
     .pipe(
-      tap(actionType => {
-        (Object.values(effects as any) as any[]).forEach(effect => {
-          effect(actionType, currentState.getValue(), actions, services);
-        });
-      })
+      switchMap(s =>
+        action$.pipe(
+          filter(actionType => !!actionType),
+          tap(actionType => {
+            (Object.values(effects as any) as any[]).forEach(effect => {
+              effect(actionType, s, actions, services);
+            });
+          })
+        )
+      )
     )
     .subscribe();
 
